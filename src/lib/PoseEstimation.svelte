@@ -36,11 +36,27 @@
   
       if (imageFile) {
         const reader = new FileReader();
-        reader.onload = async () => {
-          imageElement.src = reader.result;
-          await imageElement.decode(); // Ensure image is fully loaded
-          pose.send({ image: imageElement });
+        // reader.onload = async () => {
+        //   imageElement.src = reader.result;
+        //   await imageElement.decode(); // Ensure image is fully loaded
+        //   await new Promise((resolve, reject) => {
+        //   imageElement.onload = resolve;
+        //   imageElement.onerror = reject;
+        //   });
+        //   pose.send({ image: imageElement });
 
+        // };
+        reader.onload = async () => {
+        imageElement.src = reader.result;
+        try {
+            await new Promise((resolve, reject) => {
+            imageElement.onload = resolve;
+            imageElement.onerror = reject;
+            });
+            pose.send({ image: imageElement });
+        } catch (error) {
+            console.error('Error loading image:', error);
+        }
         };
         reader.readAsDataURL(imageFile);
       }
@@ -56,7 +72,7 @@
       }
       canvasCtx.restore();
     }
-  </script>
+</script>
   
 <style>
     #container {
