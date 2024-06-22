@@ -10,9 +10,8 @@
   </script>
   
   <main>
-    <h1>Hand Gesture & Pose Estimation</h1>
+    <h2>Pose Estimation App</h2>
     <div>
-          <h2>Pose Estimation</h2>
           <PoseEstimation {imageFile} />
     <div />
   </main>

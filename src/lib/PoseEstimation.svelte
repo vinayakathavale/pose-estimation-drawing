@@ -80,4 +80,4 @@
   <video id="webcam" autoplay playsinline aria-hidden="true"></video>
   <canvas id="output_canvas"></canvas>
 </div>
-<button on:click={toggleWebcam}>Toggle Webcam</button>
+<button on:click={toggleWebcam}>Toggle Pose Estimation</button>
