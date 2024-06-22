@@ -64,20 +64,20 @@
 <style>
   .video-container {
     position: relative;
-    width: 640px; /* Adjust as needed */
-    height: 480px; /* Adjust as needed */
+    width: 960px; /* Adjust as needed */
+    height: 720px; /* Adjust as needed */
   }
   #webcam, #output_canvas {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 10;
+    left: 10;
+    width: 90%;
+    height: 90%;
   }
 </style>
+<button on:click={toggleWebcam}>Toggle Pose Estimation</button>
 
 <div class="video-container">
   <video id="webcam" autoplay playsinline aria-hidden="true"></video>
   <canvas id="output_canvas"></canvas>
 </div>
-<button on:click={toggleWebcam}>Toggle Pose Estimation</button>
