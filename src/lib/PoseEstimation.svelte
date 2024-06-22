@@ -1,94 +1,67 @@
 <script>
-    import { onMount } from 'svelte';
-    // import { Pose } from '@mediapipe/pose';
-    import pkg from '@mediapipe/pose';
-    const { Pose } = pkg;
+  import { onMount } from 'svelte';
+  import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 
-    // import { drawConnectors, drawLandmarks, POSE_CONNECTIONS } from '@mediapipe/drawing_utils';
-    import pkgDrawing from '@mediapipe/drawing_utils';
-    const { drawConnectors, drawLandmarks, POSE_CONNECTIONS } = pkgDrawing;
-  
-    let imageElement;
-    let canvasElement;
-    let canvasCtx;
-  
-    export let imageFile;
-  
-    onMount(async () => {
-      imageElement = document.getElementById('uploaded_image');
-      canvasElement = document.getElementById('pose_canvas');
-      canvasCtx = canvasElement.getContext('2d');
-  
-      const pose = new Pose({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-      });
-  
-      pose.setOptions({
-        modelComplexity: 1,
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        smoothSegmentation: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-  
-      pose.onResults(onResults);
-  
-      if (imageFile) {
-        const reader = new FileReader();
-        // reader.onload = async () => {
-        //   imageElement.src = reader.result;
-        //   await imageElement.decode(); // Ensure image is fully loaded
-        //   await new Promise((resolve, reject) => {
-        //   imageElement.onload = resolve;
-        //   imageElement.onerror = reject;
-        //   });
-        //   pose.send({ image: imageElement });
+  let videoElement;
+  let canvasElement;
+  let canvasCtx;
+  let poseLandmarker;
+  let webcamRunning = false;
 
-        // };
-        reader.onload = async () => {
-        imageElement.src = reader.result;
-        try {
-            await new Promise((resolve, reject) => {
-            imageElement.onload = resolve;
-            imageElement.onerror = reject;
-            });
-            pose.send({ image: imageElement });
-        } catch (error) {
-            console.error('Error loading image:', error);
-        }
-        };
-        reader.readAsDataURL(imageFile);
-      }
+  onMount(async () => {
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+    );
+    poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+        delegate: "GPU"
+      },
+      runningMode: "VIDEO",
+      numPoses: 2
     });
-  
-    function onResults(results) {
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-      if (results.poseLandmarks) {
-        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { color: '#00FF00', lineWidth: 4 });
-        drawLandmarks(canvasCtx, results.poseLandmarks, { color: '#FF0000', lineWidth: 2 });
-      }
-      canvasCtx.restore();
+
+    videoElement = document.getElementById('webcam');
+    canvasElement = document.getElementById('output_canvas');
+    canvasCtx = canvasElement.getContext('2d');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoElement.srcObject = stream;
+      videoElement.play();
+      predictWebcam();
     }
+  });
+
+  async function predictWebcam() {
+    if (webcamRunning) {
+      let startTimeMs = performance.now();
+      poseLandmarker.detectForVideo(videoElement, startTimeMs, (result) => {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        const drawingUtils = new DrawingUtils(canvasCtx);
+        for (const landmark of result.landmarks) {
+          drawingUtils.drawLandmarks(landmark, {
+            radius: (data) => DrawingUtils.lerp(data.from?.z ?? 0, -0.15, 0.1, 5, 1)
+          });
+          drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS);
+        }
+        canvasCtx.restore();
+      });
+      window.requestAnimationFrame(predictWebcam);
+    }
+  }
+
+  function toggleWebcam() {
+    webcamRunning = !webcamRunning;
+    if (webcamRunning) {
+      predictWebcam();
+    }
+  }
 </script>
-  
-<style>
-    #container {
-      display: flex;
-      justify-content: space-around;
-    }
-    #uploaded_image, #pose_canvas {
-      width: 45%;
-      max-width: 320px;
-    }
-</style>
-  
-<div id="container">
-    <img id="uploaded_image" alt="" on:load={() => {
-      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-      pose.send({ image: imageElement });
-    }} />
-    <canvas id="pose_canvas" width="640" height="480"></canvas>
+
+<div>
+  <video id="webcam" autoplay playsinline aria-hidden="true"></video>
+  <canvas id="output_canvas"></canvas>
+  <button on:click={toggleWebcam}>Toggle Webcam</button>
 </div>

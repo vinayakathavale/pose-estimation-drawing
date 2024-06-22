@@ -1,6 +1,5 @@
 <script>
     import { onMount } from 'svelte';
-    import HandGesture from '$lib/HandGesture.svelte';
     import PoseEstimation from '$lib/PoseEstimation.svelte';
   
     let imageFile = null;
@@ -12,15 +11,10 @@
   
   <main>
     <h1>Hand Gesture & Pose Estimation</h1>
-    <input type="file" accept="image/*" on:change={handleFileUpload} />
-    {#if imageFile}
-      <div style="display: flex; gap: 20px;">
-        <div>
+    <div>
           <h2>Pose Estimation</h2>
           <PoseEstimation {imageFile} />
-        </div>
-      </div>
-    {/if}
+    <div />
   </main>
   
   <style>
@@ -34,9 +28,6 @@
       color: white;
     }
   
-    input[type="file"] {
-      margin-bottom: 20px;
-    }
   
     div {
       display: flex;
