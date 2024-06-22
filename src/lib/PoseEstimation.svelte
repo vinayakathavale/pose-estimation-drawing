@@ -26,7 +26,8 @@
     canvasCtx = canvasElement.getContext('2d');
 
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({         video: { facingMode: 'environment' } 
+ });
       videoElement.srcObject = stream;
       videoElement.play();
       predictWebcam();
